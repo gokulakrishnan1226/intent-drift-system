@@ -3,10 +3,11 @@ from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 
 class SystemVolume:
-    def _init_(self):
-        self.volume = None
-        self.original = None
+    # 🔒 Define attributes at class level (VERY IMPORTANT)
+    volume = None
+    original = None
 
+    def __init__(self):
         try:
             devices = AudioUtilities.GetSpeakers()
             interface = devices.Activate(
@@ -18,9 +19,9 @@ class SystemVolume:
             print("Audio init error:", e)
 
     def mute(self):
-        if self.volume:
+        if hasattr(self, "volume") and self.volume:
             self.volume.SetMasterVolumeLevelScalar(0.15, None)
 
     def restore(self):
-        if self.volume and self.original is not None:
+        if hasattr(self, "volume") and self.volume and self.original is not None:
             self.volume.SetMasterVolumeLevelScalar(self.original, None)
