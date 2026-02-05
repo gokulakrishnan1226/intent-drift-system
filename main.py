@@ -1,32 +1,29 @@
-from intent_manager import IntentManager
-from activity_monitor import ActivityMonitor
-from drift_detector import DriftDetector
-from alert_system import AlertSystem
+from backend_controller import BackendController
 
 def main():
-    print("=== Intent Drift Alert System (Basic Model) ===")
+    print("=== Intent Drift Alert System (CLI) ===")
 
-    intent_manager = IntentManager()
-    activity_monitor = ActivityMonitor()
-    drift_detector = DriftDetector()
-    alert_system = AlertSystem()
+    backend = BackendController()
 
     intent = input("Select your purpose (study/coding/browsing): ")
-    intent_manager.set_intent(intent)
+    backend.set_intent(intent)
 
-    while True:
-        activity = activity_monitor.get_activity()
-        current_intent = intent_manager.get_intent()
+    try:
+        while True:
+            drift_activity = backend.check_drift()
+            if drift_activity:
+                print(f"⚠️  Detected possible drift to: {drift_activity}")
+                # Log and pause monitoring for this demo
+                backend.log_event(drift_activity, motivation=None)
+            else:
+                print("✓ Activity matches your purpose or monitoring paused")
 
-        if drift_detector.is_drift(current_intent, activity):
-            alert_system.show_alert(current_intent, activity)
-        else:
-            print("✓ Activity matches your purpose")
-
-        cont = input("Continue? (y/n): ")
-        if cont.lower() != 'y':
-            print("Exiting program...")
-            break
+            cont = input("Continue? (y/n): ")
+            if cont.lower() != 'y':
+                print("Exiting program...")
+                break
+    except KeyboardInterrupt:
+        print("\nInterrupted. Exiting.")
 
 if __name__ == "__main__":
     main()
