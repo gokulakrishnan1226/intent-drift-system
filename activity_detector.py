@@ -11,7 +11,7 @@ class ActivityDetector:
     def detect_activity(self):
         """
         Detects current active window/tab and categorizes activity.
-        Returns: study, coding, social, browsing, idle, unknown
+        Returns: study, coding, social, browsing, idle, browsing (if unknown app)
         """
         try:
             window = gw.getActiveWindow()
@@ -19,9 +19,12 @@ class ActivityDetector:
                 return "idle"
 
             title = window.title.lower()
-            app_name = title.split()
+            
+            # Check if the window is desktop or idle
+            if any(k in title for k in ["desktop", "program manager", "explorer", "shell", "windows", "taskbar"]):
+                return "idle"
 
-            # Check for coding
+            # Check for coding first
             if any(k in title for k in self.coding_apps):
                 return "coding"
             
@@ -41,7 +44,9 @@ class ActivityDetector:
             if any(k in title for k in ["lecture", "course", "class", "tutorial", "documentation"]):
                 return "study"
 
-            return "other"
+            # If it's an unknown app (not idle, not recognized), treat as browsing activity
+            # This way it will be detected as drift when user should be studying/coding
+            return "browsing"
 
         except Exception as e:
             print(f"Activity detection error: {e}")

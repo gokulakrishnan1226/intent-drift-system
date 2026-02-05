@@ -15,7 +15,7 @@ class DriftDetector:
         - Activity doesn't match the intent's allowed activities
         """
         # Social media is always a distraction
-        if activity in ["social", "idle", "unknown"]:
+        if activity in ["social"]:
             return True
         
         if intent not in self.rules:

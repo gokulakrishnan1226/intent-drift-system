@@ -24,6 +24,7 @@ class BackendController:
         self.current_intent = intent
         self.focus_tracker.reset()
         self.last_alert_activity = None
+        self.current_activity = None
 
     def reset_distraction_timer(self):
         """Reset continuous distraction tracking so next alert requires full threshold."""
@@ -37,11 +38,17 @@ class BackendController:
     def check_drift(self):
         """
         Checks for activity drift and returns activity only if:
-        1. Drift is detected
-        2. Activity is not idle/unknown
+        1. Activity is meaningful (not idle/unknown)
+        2. Drift is detected
         3. Distraction has been continuous for >= 20 seconds
+        4. It's not the same activity we already alerted about
         """
         activity = self.activity_detector.detect_activity()
+        
+        # Skip processing if activity is idle/unknown/None
+        if activity in ["idle", "unknown", None]:
+            self.focus_tracker.update(self.current_intent, activity)
+            return None
         
         # Update focus tracker with current activity
         self.focus_tracker.update(self.current_intent, activity)
@@ -49,17 +56,16 @@ class BackendController:
         # Check if drift is detected
         distracted = self.drift_detector.is_drift(self.current_intent, activity)
         
+        # Only proceed if drift is detected
+        if not distracted:
+            return None
+        
         # Get continuous distraction time
         continuous_distraction = self.focus_tracker.get_continuous_distraction_seconds()
         
-        # Only trigger alert if:
-        # 1. Drift is detected
-        # 2. Activity is meaningful (not idle/unknown)
-        # 3. Distraction has lasted >= 20 seconds
-        # 4. It's not the same activity we already alerted about
-        if (distracted and 
-            activity not in ["idle", "unknown", None] and
-            continuous_distraction >= self.distraction_threshold and
+        # Only trigger alert if distraction has been continuous for >= threshold
+        # and it's not the same activity we already alerted about
+        if (continuous_distraction >= self.distraction_threshold and
             activity != self.last_alert_activity):
             
             self.last_alert_activity = activity
